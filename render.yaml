@@ -1,0 +1,50 @@
+services:
+  # ---- Backend API ----
+  - type: web
+    name: arogya-sathi-backend
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install --omit=dev
+    startCommand: cd backend && node --dns-result-order=ipv4first src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: "postgres"
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: LOG_LEVEL
+        value: info
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+    healthCheckPath: /api/health
+
+  # ---- Frontend (Web Service serving built Angular SPA) ----
+  - type: web
+    name: arogya-sathi-frontend
+    runtime: node
+    plan: free
+    buildCommand: >-
+      cd frontend &&
+      npm install &&
+      sed -i "s|__API_URL__|$API_URL|g" src/environments/environment.prod.ts &&
+      npm install serve &&
+      npx ng build --configuration production
+    startCommand: cd frontend && npx serve -s dist/arogya-sathi/browser -l 4200
+    envVars:
+      - key: API_URL
+        sync: false

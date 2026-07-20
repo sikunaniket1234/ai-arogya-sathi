@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Arogya Sathi — Prototype Demo</title>
+<style>
+  :root{
+    --ink:#0E1F1B; --panel:#123028; --marigold:#C9862F; --marigold-lt:#F3D9A8;
+    --green:#2F7D57; --coral:#C24A2E; --paper:#FBF7EC; --paper-2:#F1E9D3;
+    --line:#E1D7BA; --ink-text:#1D2A25; --muted:#6B7A73;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI', Arial, sans-serif; background:var(--paper); color:var(--ink-text);}
+  .app{max-width:1000px; margin:0 auto; min-height:100vh; background:var(--paper); box-shadow:0 0 40px rgba(0,0,0,0.08);}
+
+  /* ---- top bar ---- */
+  header{background:var(--ink); color:white; padding:16px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.05rem;}
+  .brand .dot{width:9px; height:9px; border-radius:50%; background:var(--coral); animation:beat 1.8s infinite;}
+  @keyframes beat{0%,100%{transform:scale(1);}30%{transform:scale(1.4);}}
+  .demo-flag{font-size:0.7rem; background:rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px; color:#D8C9A3;}
+
+  nav{display:flex; gap:6px; background:var(--panel); padding:8px 14px; overflow-x:auto;}
+  nav button{
+    background:transparent; border:none; color:#B9CFC5; font-size:0.85rem; padding:10px 14px;
+    border-radius:6px; cursor:pointer; white-space:nowrap; transition:all .15s;
+  }
+  nav button.active{background:var(--marigold); color:var(--ink);}
+  nav button:hover:not(.active){background:rgba(255,255,255,0.08); color:white;}
+
+  main{padding:26px 26px 60px;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h1{font-size:1.5rem; margin-bottom:6px; color:var(--ink);}
+  .sub{color:var(--muted); font-size:0.92rem; margin-bottom:22px;}
+  .card{background:white; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:16px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  @media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  .demo-banner{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; background:linear-gradient(90deg, rgba(201,134,47,0.12), rgba(47,125,87,0.12)); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:18px;}
+  .status-pill{display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:white; padding:7px 12px; border-radius:999px; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em;}
+  .status-pill::before{content:'●'; color:var(--green); font-size:0.9rem;}
+  .demo-steps{display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:0.84rem;}
+  .demo-steps span{background:white; border:1px solid var(--line); padding:6px 10px; border-radius:999px;}
+  .mic-note{margin-top:10px; font-size:0.86rem; color:#CFE3D8;}
+
+  /* ---- home / voice ---- */
+  .mic-wrap{text-align:center; padding:34px 20px; background:linear-gradient(180deg, var(--panel), var(--ink)); border-radius:12px; color:white; margin-bottom:20px;}
+  .mic-btn{
+    width:96px; height:96px; border-radius:50%; border:3px solid var(--marigold); background:rgba(255,255,255,0.06);
+    color:white; font-size:2.1rem; cursor:pointer; transition:all .2s;
+  }
+  .mic-btn:hover{background:rgba(255,255,255,0.14);}
+  .mic-btn.listening{background:var(--coral); border-color:var(--coral); animation:pulse-ring 1s infinite;}
+  @keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(194,74,46,0.6);}100%{box-shadow:0 0 0 22px rgba(194,74,46,0);}}
+  .mic-label{margin-top:14px; font-size:0.95rem; color:#CFE3D8;}
+  .lang-tabs{display:flex; gap:8px; justify-content:center; margin-top:18px; flex-wrap:wrap;}
+  .lang-tab{padding:7px 16px; border-radius:20px; border:1px solid rgba(255,255,255,0.25); background:transparent; color:#CFE3D8; font-size:0.82rem; cursor:pointer;}
+  .lang-tab.active{background:var(--marigold); color:var(--ink); border-color:var(--marigold); font-weight:600;}
+  .transcript{margin-top:16px; font-style:italic; color:var(--marigold-lt); min-height:20px;}
+  .type-fallback{display:flex; gap:8px; margin-top:20px; max-width:420px; margin-left:auto; margin-right:auto;}
+  .type-fallback input{flex:1; padding:10px 12px; border-radius:6px; border:none; font-size:0.9rem;}
+  .type-fallback button{padding:10px 16px; border-radius:6px; border:none; background:var(--marigold); color:var(--ink); font-weight:600; cursor:pointer;}
+
+  .quick-symptoms{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .quick-symptoms button{
+    padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--paper-2);
+    font-size:0.82rem; cursor:pointer; color:var(--ink-text);
+  }
+  .quick-symptoms button:hover{border-color:var(--marigold); color:var(--marigold);}
+
+  /* ---- symptom result ---- */
+  .result-card{border-left:5px solid var(--marigold); background:var(--paper-2);}
+  .result-card.emergency{border-left-color:var(--coral); background:#FCEFE9;}
+  .result-title{font-size:1.15rem; font-weight:700; margin-bottom:8px; color:var(--ink);}
+  .result-section{margin-top:12px;}
+  .result-section h4{font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:6px;}
+  .result-section ul{padding-left:20px;}
+  .warn-box{margin-top:14px; background:#FCEFE9; border:1px solid var(--coral); border-radius:6px; padding:10px 14px; color:#7A2E1B; font-size:0.9rem;}
+  .source-tag{display:inline-block; margin-top:12px; font-size:0.75rem; color:var(--green); background:#E7F3EC; padding:4px 10px; border-radius:12px;}
+
+  /* ---- profile switcher (shared) ---- */
+  .profile-switch{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;}
+  .profile-chip{
+    display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:24px; border:1.5px solid var(--line);
+    background:white; cursor:pointer; font-size:0.86rem;
+  }
+  .profile-chip.active{border-color:var(--marigold); background:var(--marigold-lt);}
+  .avatar{width:26px; height:26px; border-radius:50%; background:var(--panel); color:white; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;}
+
+  /* ---- dashboard ---- */
+  .stat-card{text-align:left;}
+  .stat-card .lbl{font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em;}
+  .stat-card .val{font-size:1.7rem; font-weight:700; color:var(--ink); margin-top:4px;}
+  .stat-card .unit{font-size:0.8rem; color:var(--muted); font-weight:400;}
+  .health-score-ring{display:flex; align-items:center; gap:16px;}
+  .sync-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .btn{background:var(--ink); color:white; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-size:0.86rem;}
+  .btn:hover{background:var(--panel);}
+  .btn.marigold{background:var(--marigold); color:var(--ink); font-weight:600;}
+  .sync-time{font-size:0.78rem; color:var(--muted);}
+  svg.chart{width:100%; height:90px;}
+
+  /* ---- medicines ---- */
+  .med-row{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+  .med-row:last-child{border-bottom:none;}
+  .med-name{font-weight:600; color:var(--ink);}
+  .med-time{font-size:0.8rem; color:var(--muted);}
+  .taken-btn{padding:7px 14px; border-radius:6px; border:1px solid var(--green); color:var(--green); background:white; cursor:pointer; font-size:0.8rem;}
+  .taken-btn.done{background:var(--green); color:white;}
+  .adherence-bar{height:8px; background:var(--paper-2); border-radius:6px; overflow:hidden; margin-top:8px;}
+  .adherence-fill{height:100%; background:var(--green);}
+
+  /* ---- profiles page ---- */
+  .profile-detail-card{display:flex; gap:18px; flex-wrap:wrap;}
+  .profile-detail-card .avatar-lg{width:64px; height:64px; border-radius:50%; background:var(--panel); color:white; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:700; flex-shrink:0;}
+  .tag-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+  .tag-list span{background:var(--paper-2); padding:4px 10px; border-radius:14px; font-size:0.78rem;}
+
+  /* ---- emergency ---- */
+  .emergency-header{background:var(--coral); color:white; padding:18px 20px; border-radius:8px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;}
+  .offline-badge{background:rgba(255,255,255,0.2); padding:5px 12px; border-radius:20px; font-size:0.78rem;}
+  .hospital-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line);}
+  .hospital-row:last-child{border-bottom:none;}
+  .call-btn{padding:6px 14px; border-radius:6px; border:none; background:var(--green); color:white; font-size:0.8rem; cursor:pointer;}
+  .aid-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:6px;}
+  @media(max-width:700px){.aid-grid{grid-template-columns:1fr;}}
+  .aid-btn{padding:14px; border-radius:8px; border:1px solid var(--line); background:white; cursor:pointer; text-align:left; font-size:0.86rem; font-weight:600;}
+  .aid-btn:hover{border-color:var(--coral); color:var(--coral);}
+  .aid-steps{display:none; margin-top:14px; background:var(--paper-2); border-radius:8px; padding:14px 18px;}
+  .aid-steps.show{display:block;}
+  .aid-steps ol{padding-left:20px;}
+  .aid-steps li{margin-bottom:6px; font-size:0.88rem;}
+
+  footer{padding:16px 26px; text-align:center; font-size:0.75rem; color:var(--muted); border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand"><span class="dot"></span>AI Arogya Sathi</div>
+    <div class="demo-flag">DEMO DATA — NOT REAL MEDICAL ADVICE</div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" data-view="home">🎙 Home</button>
+    <button class="nav-btn" data-view="dashboard">📊 Dashboard</button>
+    <button class="nav-btn" data-view="symptoms">🩺 Symptom Checker</button>
+    <button class="nav-btn" data-view="medicines">💊 Medicines</button>
+    <button class="nav-btn" data-view="profiles">👨‍👩‍👧 Family Profiles</button>
+    <button class="nav-btn" data-view="emergency">🚨 Emergency</button>
+  </nav>
+
+  <main>
+
+    <!-- ================= HOME / VOICE ================= -->
+    <section class="view active" id="view-home">
+      <h1>Ask AI Arogya Sathi</h1>
+      <p class="sub">Speak a symptom out loud, or tap one below. Works in English, Hindi, and Odia.</p>
+
+      <div class="demo-banner">
+        <div class="status-pill">Offline-ready demo</div>
+        <div class="demo-steps">
+          <span>1. Speak a symptom</span>
+          <span>2. Review the advice</span>
+          <span>3. Explore the dashboard</span>
+        </div>
+      </div>
+
+      <div class="mic-wrap">
+        <button class="mic-btn" id="micBtn">🎤</button>
+        <div class="mic-label" id="micLabel">Tap to speak</div>
+        <div class="lang-tabs">
+          <button class="lang-tab active" data-lang="en-IN" data-key="en">English</button>
+          <button class="lang-tab" data-lang="hi-IN" data-key="hi">हिन्दी</button>
+          <button class="lang-tab" data-lang="or-IN" data-key="or">ଓଡ଼ିଆ</button>
+        </div>
+        <div class="mic-note" id="voiceHint">Try saying fever, cough, or headache.</div>
+        <div class="transcript" id="transcript"></div>
+        <div class="type-fallback">
+          <input type="text" id="typeInput" placeholder="Or type a symptom, e.g. fever">
+          <button id="typeGoBtn">Ask</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom:8px; color:var(--muted); font-size:0.8rem; text-transform:uppercase;">Quick try</h4>
+        <div class="quick-symptoms" id="quickSymptoms"></div>
+      </div>
+
+      <div id="homeResult"></div>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section class="view" id="view-dashboard">
+      <h1>Health Dashboard</h1>
+      <p class="sub">One screen for today's health picture.</p>
+      <div class="profile-switch" id="profileSwitchDash"></div>
+
+      <div class="sync-row">
+        <div class="sync-time" id="syncTime">Last synced just now</div>
+        <button class="btn marigold" id="syncBtn">Sync wearable</button>
+      </div>
+
+      <div class="grid3">
+        <div class="card stat-card"><div class="lbl">Health Score</div><div class="val" id="dHealthScore">--</div></div>
+        <div class="card stat-card"><div class="lbl">Heart Rate</div><div class="val" id="dHeart">-- <span class="unit">bpm</span></div></div>
+        <div class="card stat-card"><div class="lbl">Blood Pressure</div><div class="val" id="dBP">--</div></div>
+        <div class="card stat-card"><div class="lbl">Oxygen (SpO₂)</div><div class="val" id="dSpo2">-- <span class="unit">%</span></div></div>
+        <div class="card stat-card"><div class="lbl">Temperature</div><div class="val" id="dTemp">-- <span class="unit">°F</span></div></div>
+        <div class="card stat-card"><div class="lbl">Avg Sleep (7d)</div><div class="val" id="dSleep">-- <span class="unit">hrs</span></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="lbl" style="font-size:0.8rem; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Heart rate — last 7 days</div>
+          <svg class="chart" id="chartHeart"></svg>
+        </div>
+        <div class="card">
+          <div class="lbl" style="font-size:0.8rem; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Sleep — last 7 days</div>
+          <svg class="chart" id="chartSleep"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SYMPTOM CHECKER ================= -->
+    <section class="view" id="view-symptoms">
+      <h1>Symptom Checker</h1>
+      <p class="sub">Pick a symptom to see possible causes, home care, and when to see a doctor.</p>
+      <div class="quick-symptoms" id="symptomList"></div>
+      <div id="symptomResult" style="margin-top:18px;"></div>
+    </section>
+
+    <!-- ================= MEDICINES ================= -->
+    <section class="view" id="view-medicines">
+      <h1>Medicine Reminders</h1>
+      <p class="sub">Never miss a dose. Track what's been taken today.</p>
+      <div class="profile-switch" id="profileSwitchMed"></div>
+      <div class="card" id="medList"></div>
+      <div class="card">
+        <div class="lbl" style="font-size:0.8rem; color:var(--muted); text-transform:uppercase;">This week's adherence</div>
+        <div class="adherence-bar"><div class="adherence-fill" id="adherenceFill" style="width:0%"></div></div>
+        <div style="margin-top:6px; font-size:0.85rem; color:var(--muted);" id="adherenceText"></div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILES ================= -->
+    <section class="view" id="view-profiles">
+      <h1>Family Profiles</h1>
+      <p class="sub">One profile per family member — tap a card to view details.</p>
+      <div class="profile-switch" id="profileSwitchProf"></div>
+      <div class="card profile-detail-card" id="profileDetail"></div>
+    </section>
+
+    <!-- ================= EMERGENCY ================= -->
+    <section class="view" id="view-emergency">
+      <div class="emergency-header">
+        <div><strong>Emergency Mode</strong> — works fully offline</div>
+        <div class="offline-badge" id="offlineBadge">Checking connection…</div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom:10px;">Emergency contact</h4>
+        <div class="hospital-row"><span id="emContactName">—</span><button class="call-btn">Call</button></div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom:10px;">Nearby hospitals (sample data)</h4>
+        <div id="hospitalList"></div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin-bottom:10px;">First-aid guides</h4>
+        <div class="aid-grid" id="aidGrid"></div>
+        <div class="aid-steps" id="aidSteps"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>AI Arogya Sathi — Prototype build for demonstration purposes. Not a substitute for professional medical advice.</footer>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+let currentProfile = 0;
+let currentLangKey = 'en';
+let currentLangCode = 'en-IN';
+const STORAGE_KEY = 'ai-arogya-sathi-demo-state';
+
+function loadDemoState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved) return;
+    if(typeof saved.currentProfile === 'number') currentProfile = saved.currentProfile;
+    if(saved.medicineTaken && Array.isArray(saved.medicineTaken)){
+      profiles.forEach((p, pi)=>{
+        p.medicines.forEach((m, mi)=>{
+          if(saved.medicineTaken[pi] && Array.isArray(saved.medicineTaken[pi])){
+            m.taken = !!saved.medicineTaken[pi][mi];
+          }
+        });
+      });
+    }
+  } catch(e){}
+}
+
+function saveDemoState(){
+  const medicineTaken = profiles.map(p => p.medicines.map(m => !!m.taken));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ currentProfile, medicineTaken }));
+}
+
+const profiles = [
+  { id:'rajesh', name:'Rajesh', initials:'R', age:48, blood:'B+',
+    conditions:['None known'], allergies:['None known'],
+    emergencyContact:'+91 98xxxxxx01',
+    medicines:[{name:'Vitamin D', dose:'1 tablet', time:'09:00 AM', taken:false}],
+    adherence:{taken:5, total:7},
+    vitals:{heart:[78,82,80,85,79,83,81], sleep:[6.2,5.8,6.5,7.0,6.1,6.8,6.4], spo2:97, bp:'128/84', temp:98.4, healthScore:78} },
+  { id:'priya', name:'Priya', initials:'P', age:22, blood:'O+',
+    conditions:['None known'], allergies:['Pollen'],
+    emergencyContact:'+91 98xxxxxx02',
+    medicines:[{name:'Cetirizine', dose:'1 tablet', time:'09:00 PM', taken:false}],
+    adherence:{taken:7, total:7},
+    vitals:{heart:[70,72,75,71,74,73,70], sleep:[7.2,7.5,6.9,7.8,7.1,7.6,7.4], spo2:98, bp:'112/74', temp:98.2, healthScore:91} },
+  { id:'savitri', name:'Savitri Devi', initials:'S', age:67, blood:'A+',
+    conditions:['High blood pressure','Diabetes'], allergies:['Penicillin'],
+    emergencyContact:'+91 98xxxxxx03',
+    medicines:[{name:'Metformin', dose:'1 tablet', time:'08:00 AM', taken:false},
+               {name:'Amlodipine', dose:'1 tablet', time:'08:00 PM', taken:false}],
+    adherence:{taken:16, total:21},
+    vitals:{heart:[88,91,95,90,93,96,92], sleep:[5.4,5.1,4.8,5.6,5.0,4.9,5.2], spo2:95, bp:'148/92', temp:98.6, healthScore:58} },
+];
+
+/* ============================================================
+   SYMPTOM DATABASE (English / Hindi / Odia)
+============================================================ */
+const symptoms = {
+  fever: { label:'Fever', emergency:false,
+    en:{ title:'Fever', causes:['Common cold','Flu','Malaria','Typhoid'],
+      care:['Drink plenty of water','Rest well','Cool water compress on the forehead','Take paracetamol if needed'],
+      warn:'See a doctor if fever lasts more than 3 days, breathing becomes difficult, or confusion appears.',
+      source:'WHO Guidelines on Fever Management' },
+    hi:{ title:'बुखार (Fever)', causes:['सर्दी-जुकाम','फ्लू','मलेरिया','टाइफाइड'],
+      care:['पानी खूब पिएं','आराम करें','ठंडे पानी से माथा पोंछें','ज़रूरत हो तो पैरासेटामोल लें'],
+      warn:'यदि बुखार 3 दिन से ज़्यादा हो, सांस लेने में दिक्कत हो, या बेहोशी जैसा महसूस हो — डॉक्टर से मिलें।',
+      source:'WHO Guidelines on Fever Management' },
+    or:{ title:'ଜ୍ୱର (Fever)', causes:['ସାଧାରଣ ସର୍ଦି','ଫ୍ଲୁ','ମ୍ୟାଲେରିଆ','ଟାଇଫଏଡ'],
+      care:['ଅଧିକ ପାଣି ପିଅନ୍ତୁ','ବିଶ୍ରାମ ନିଅନ୍ତୁ','ଥଣ୍ଡା ପାଣିରେ ମୁଣ୍ଡ ପୋଛନ୍ତୁ','ଆବଶ୍ୟକ ହେଲେ ପାରାସେଟାମଲ ନିଅନ୍ତୁ'],
+      warn:'ଜ୍ୱର ୩ ଦିନରୁ ଅଧିକ ରହିଲେ, ଶ୍ୱାସ ନେବାରେ ଅସୁବିଧା ହେଲେ ଡାକ୍ତରଙ୍କ ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'WHO Guidelines' } },
+
+  cough: { label:'Cough', emergency:false,
+    en:{ title:'Cough', causes:['Common cold','Bronchitis','Asthma'],
+      care:['Take honey','Drink warm milk or herbal tea','Gargle with salt water','Use a humidifier'],
+      warn:'See a doctor if the cough lasts more than 2 weeks, brings up blood, or comes with shortness of breath.',
+      source:'Indian Medical Association Guidelines' },
+    hi:{ title:'खांसी (Cough)', causes:['सर्दी-जुकाम','ब्रोंकाइटिस','अस्थमा'],
+      care:['शहद लें','गर्म दूध या चाय पिएं','नमक के पानी से कुल्ला करें','ह्यूमिडिफायर का उपयोग करें'],
+      warn:'खांसी 2 हफ्ते से ज़्यादा हो, खून आए, या सांस फूले — तो डॉक्टर से मिलें।',
+      source:'Indian Medical Association Guidelines' },
+    or:{ title:'କାଶ (Cough)', causes:['ସାଧାରଣ ସର୍ଦି','ବ୍ରଙ୍କାଇଟିସ','ଆଜମା'],
+      care:['ମହୁ ନିଅନ୍ତୁ','ଗରମ ଦୁଧ କିମ୍ବା ଚା ପିଅନ୍ତୁ','ଲୁଣ ପାଣିରେ କୁଳକୁଳି କରନ୍ତୁ'],
+      warn:'କାଶ ୨ ସପ୍ତାହରୁ ଅଧିକ ରହିଲେ ଡାକ୍ତରଙ୍କ ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'Medical Guidelines' } },
+
+  headache: { label:'Headache', emergency:false,
+    en:{ title:'Headache', causes:['Stress','Dehydration','Eye strain','Migraine'],
+      care:['Drink water','Rest in a dark, quiet room','Cold compress on the forehead','Rest your eyes from screens'],
+      warn:'See a doctor if the headache is sudden and severe, or comes with blurred vision or vomiting.',
+      source:'National Health Portal, India' },
+    hi:{ title:'सिर दर्द (Headache)', causes:['तनाव','पानी की कमी','आँखों पर ज़ोर','माइग्रेन'],
+      care:['पानी पिएं','अंधेरे, शांत कमरे में आराम करें','माथे पर ठंडी सिकाई करें','स्क्रीन से आँखों को आराम दें'],
+      warn:'अचानक तेज़ सिरदर्द हो, धुंधला दिखे या उल्टी हो — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ମୁଣ୍ଡ ବିନ୍ଧା (Headache)', causes:['ଚିନ୍ତା','ପାଣି ଅଭାବ','ଆଖି ଚାପ'],
+      care:['ପାଣି ପିଅନ୍ତୁ','ଅନ୍ଧାର, ଶାନ୍ତ କୋଠରୀରେ ବିଶ୍ରାମ ନିଅନ୍ତୁ','ମୁଣ୍ଡରେ ଥଣ୍ଡା ସେକ ଦିଅନ୍ତୁ'],
+      warn:'ହଠାତ୍ ତୀବ୍ର ମୁଣ୍ଡ ବିନ୍ଧା, ଝାପସା ଦୃଷ୍ଟି କିମ୍ବା ବାନ୍ତି ହେଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  stomachpain: { label:'Stomach Pain', emergency:false,
+    en:{ title:'Stomach Pain', causes:['Indigestion','Gas','Food poisoning','Acidity'],
+      care:['Eat light, simple food','Drink warm water','Avoid oily or spicy food','Rest'],
+      warn:'See a doctor if pain is severe, on the lower right side, or comes with fever or vomiting.',
+      source:'National Health Portal, India' },
+    hi:{ title:'पेट दर्द (Stomach Pain)', causes:['अपच','गैस','फूड पॉइज़निंग','एसिडिटी'],
+      care:['हल्का भोजन करें','गर्म पानी पिएं','तैलीय-मसालेदार खाने से बचें','आराम करें'],
+      warn:'दर्द तेज़ हो, दाहिनी निचली तरफ हो, या बुखार/उल्टी के साथ हो — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ପେଟ ଯନ୍ତ୍ରଣା (Stomach Pain)', causes:['ଅଜୀର୍ଣ୍ଣ','ଗ୍ୟାସ','ଖାଦ୍ୟ ବିଷାକ୍ତତା'],
+      care:['ହାଲୁକା ଖାଦ୍ୟ ଖାଆନ୍ତୁ','ଗରମ ପାଣି ପିଅନ୍ତୁ','ତେଲିଆ ଖାଦ୍ୟ ଏଡାନ୍ତୁ'],
+      warn:'ଯନ୍ତ୍ରଣା ତୀବ୍ର ହେଲେ କିମ୍ବା ଜ୍ୱର ସହିତ ହେଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  vomiting: { label:'Vomiting', emergency:false,
+    en:{ title:'Vomiting', causes:['Food poisoning','Motion sickness','Infection'],
+      care:['Sip small amounts of water often','Try ORS (oral rehydration solution)','Avoid solid food for a few hours','Rest'],
+      warn:'See a doctor if vomiting continues for more than a day, or there are signs of dehydration.',
+      source:'National Health Portal, India' },
+    hi:{ title:'उल्टी (Vomiting)', causes:['फूड पॉइज़निंग','यात्रा में जी मिचलाना','संक्रमण'],
+      care:['थोड़ा-थोड़ा पानी बार-बार पिएं','ORS घोल लें','कुछ घंटे ठोस भोजन न लें','आराम करें'],
+      warn:'उल्टी एक दिन से ज़्यादा चले, या शरीर में पानी की कमी के लक्षण दिखें — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ବାନ୍ତି (Vomiting)', causes:['ଖାଦ୍ୟ ବିଷାକ୍ତତା','ଯାତ୍ରା ଅସୁସ୍ଥତା','ସଂକ୍ରମଣ'],
+      care:['ଅଳ୍ପ ଅଳ୍ପ ପାଣି ବାରମ୍ବାର ପିଅନ୍ତୁ','ORS ନିଅନ୍ତୁ','କିଛି ଘଣ୍ଟା ଶକ୍ତ ଖାଦ୍ୟ ଏଡାନ୍ତୁ'],
+      warn:'ବାନ୍ତି ଏକ ଦିନରୁ ଅଧିକ ରହିଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  diarrhea: { label:'Diarrhea', emergency:false,
+    en:{ title:'Diarrhea', causes:['Infection','Food intolerance','Contaminated water'],
+      care:['Drink ORS or clean water often','Eat light, bland food like rice and curd','Wash hands frequently','Avoid outside food'],
+      warn:'See a doctor if it lasts more than 2 days, or there is blood, or signs of dehydration.',
+      source:'National Health Portal, India' },
+    hi:{ title:'दस्त (Diarrhea)', causes:['संक्रमण','भोजन असहनशीलता','गंदा पानी'],
+      care:['ORS या साफ पानी बार-बार पिएं','चावल-दही जैसा हल्का भोजन करें','बार-बार हाथ धोएं'],
+      warn:'2 दिन से ज़्यादा चले, खून आए, या पानी की कमी के लक्षण दिखें — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ଝାଡ଼ା (Diarrhea)', causes:['ସଂକ୍ରମଣ','ଦୂଷିତ ପାଣି'],
+      care:['ORS କିମ୍ବା ସଫା ପାଣି ବାରମ୍ବାର ପିଅନ୍ତୁ','ଭାତ-ଦହି ପରି ହାଲୁକା ଖାଦ୍ୟ ଖାଆନ୍ତୁ'],
+      warn:'୨ ଦିନରୁ ଅଧିକ ରହିଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  bodypain: { label:'Body Pain', emergency:false,
+    en:{ title:'Body Pain', causes:['Overexertion','Flu','Poor posture'],
+      care:['Rest the affected area','Gentle stretching','Warm compress','Stay hydrated'],
+      warn:'See a doctor if pain is severe, one-sided and sudden, or comes with fever.',
+      source:'National Health Portal, India' },
+    hi:{ title:'शरीर में दर्द (Body Pain)', causes:['अधिक थकान','फ्लू','गलत मुद्रा'],
+      care:['प्रभावित हिस्से को आराम दें','हल्की स्ट्रेचिंग करें','गर्म सिकाई करें','पानी खूब पिएं'],
+      warn:'दर्द तेज़, अचानक और एक तरफ हो, या बुखार के साथ हो — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ଶରୀର ଯନ୍ତ୍ରଣା (Body Pain)', causes:['ଅଧିକ ପରିଶ୍ରମ','ଫ୍ଲୁ'],
+      care:['ପ୍ରଭାବିତ ଅଂଶକୁ ବିଶ୍ରାମ ଦିଅନ୍ତୁ','ହାଲୁକା ଷ୍ଟ୍ରେଚିଂ କରନ୍ତୁ','ଗରମ ସେକ ଦିଅନ୍ତୁ'],
+      warn:'ଯନ୍ତ୍ରଣା ତୀବ୍ର ହେଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  cold: { label:'Cold', emergency:false,
+    en:{ title:'Common Cold', causes:['Viral infection','Seasonal change'],
+      care:['Rest and stay warm','Drink warm fluids','Steam inhalation','Honey and ginger tea'],
+      warn:'See a doctor if symptoms last more than 10 days or breathing becomes difficult.',
+      source:'National Health Portal, India' },
+    hi:{ title:'सर्दी-जुकाम (Cold)', causes:['वायरल संक्रमण','मौसम बदलाव'],
+      care:['आराम करें और गर्म रहें','गर्म तरल पदार्थ पिएं','भाप लें','शहद-अदरक की चाय पिएं'],
+      warn:'लक्षण 10 दिन से ज़्यादा रहें या सांस लेने में दिक्कत हो — तो डॉक्टर से मिलें।',
+      source:'National Health Portal, India' },
+    or:{ title:'ସାଧାରଣ ସର୍ଦି (Cold)', causes:['ଭାଇରାଲ ସଂକ୍ରମଣ','ଋତୁ ପରିବର୍ତ୍ତନ'],
+      care:['ବିଶ୍ରାମ ନିଅନ୍ତୁ ଏବଂ ଗରମ ରୁହନ୍ତୁ','ଗରମ ପାଣୀୟ ପିଅନ୍ତୁ','ବାଷ୍ପ ନିଅନ୍ତୁ'],
+      warn:'୧୦ ଦିନରୁ ଅଧିକ ରହିଲେ ଡାକ୍ତର ନିକଟକୁ ଯାଆନ୍ତୁ।',
+      source:'National Health Portal, India' } },
+
+  chestpain: { label:'Chest Pain', emergency:true,
+    en:{ title:'Chest Pain', causes:['Muscle strain','Acidity','Possible heart-related emergency'],
+      care:['Sit upright and stay calm', 'Loosen tight clothing'],
+      warn:'⚠ EMERGENCY: Chest pain can be serious. Call emergency services or get to a hospital immediately, especially if there is pain in the arm/jaw, sweating, or breathlessness.',
+      source:'Emergency Medical Guidelines' },
+    hi:{ title:'सीने में दर्द (Chest Pain)', causes:['मांसपेशी खिंचाव','एसिडिटी','संभावित हृदय संबंधी आपात स्थिति'],
+      care:['सीधे बैठें और शांत रहें','तंग कपड़े ढीले करें'],
+      warn:'⚠ आपातकाल: सीने का दर्द गंभीर हो सकता है। तुरंत एम्बुलेंस बुलाएं या अस्पताल जाएं, खासकर अगर बांह/जबड़े में दर्द, पसीना, या सांस फूलना हो।',
+      source:'Emergency Medical Guidelines' },
+    or:{ title:'ଛାତି ଯନ୍ତ୍ରଣା (Chest Pain)', causes:['ମାଂସପେଶୀ ଟାଣ','ଏସିଡିଟି','ହୃଦଘାତ ସମ୍ଭାବନା'],
+      care:['ସିଧା ବସନ୍ତୁ ଏବଂ ଶାନ୍ତ ରୁହନ୍ତୁ'],
+      warn:'⚠ ଜରୁରୀକାଳୀନ: ତୁରନ୍ତ ଆମ୍ବୁଲାନ୍ସ ଡାକନ୍ତୁ କିମ୍ବା ହସ୍ପିଟାଲକୁ ଯାଆନ୍ତୁ।',
+      source:'Emergency Medical Guidelines' } },
+
+  breathing: { label:'Breathing Difficulty', emergency:true,
+    en:{ title:'Breathing Difficulty', causes:['Asthma','Allergic reaction','Possible serious emergency'],
+      care:['Sit upright','Stay calm','Use prescribed inhaler if available'],
+      warn:'⚠ EMERGENCY: Difficulty breathing needs immediate medical attention. Call emergency services now.',
+      source:'Emergency Medical Guidelines' },
+    hi:{ title:'सांस लेने में तकलीफ (Breathing Difficulty)', causes:['अस्थमा','एलर्जी','गंभीर आपात स्थिति संभव'],
+      care:['सीधे बैठें','शांत रहें','यदि हो तो इनहेलर का उपयोग करें'],
+      warn:'⚠ आपातकाल: सांस की तकलीफ के लिए तुरंत चिकित्सा सहायता चाहिए। अभी एम्बुलेंस बुलाएं।',
+      source:'Emergency Medical Guidelines' },
+    or:{ title:'ଶ୍ୱାସ ନେବାରେ ଅସୁବିଧା (Breathing Difficulty)', causes:['ଆଜମା','ଆଲର୍ଜି'],
+      care:['ସିଧା ବସନ୍ତୁ','ଶାନ୍ତ ରୁହନ୍ତୁ'],
+      warn:'⚠ ଜରୁରୀକାଳୀନ: ତୁରନ୍ତ ଆମ୍ବୁଲାନ୍ସ ଡାକନ୍ତୁ।',
+      source:'Emergency Medical Guidelines' } },
+};
+
+const keywordMap = {
+  en:{ fever:['fever','temperature','hot body'], cough:['cough','coughing'], headache:['headache','head pain','head ache'],
+    stomachpain:['stomach pain','stomach ache','tummy pain'], vomiting:['vomit','vomiting','throwing up'],
+    diarrhea:['diarrhea','loose motion','loose motions'], bodypain:['body pain','body ache','muscle pain'],
+    cold:['cold','runny nose','sneezing'], chestpain:['chest pain'], breathing:['breathing difficulty','shortness of breath',"can't breathe"] },
+  hi:{ fever:['bukhar','बुखार','ज्वर'], cough:['khansi','खांसी'], headache:['sir dard','सिर दर्द','सिरदर्द'],
+    stomachpain:['pet dard','पेट दर्द'], vomiting:['ulti','उल्टी'], diarrhea:['dast','दस्त','loose motion'],
+    bodypain:['badan dard','शरीर दर्द','बदन दर्द'], cold:['zukam','जुकाम','सर्दी'],
+    chestpain:['seene mein dard','सीने में दर्द'], breathing:['saans','सांस लेने में तकलीफ'] },
+  or:{ fever:['jwor','ଜ୍ୱର'], cough:['kasi','କାଶ'], headache:['sar dukiba','ମୁଣ୍ଡ ବିନ୍ଧା'],
+    stomachpain:['pet dukiba','ପେଟ ଯନ୍ତ୍ରଣା'], vomiting:['banti','ବାନ୍ତି'], diarrhea:['jhada','ଝାଡ଼ା'],
+    bodypain:['sarira dukiba','ଶରୀର ଯନ୍ତ୍ରଣା'], cold:['sardi','ସର୍ଦି'],
+    chestpain:['chati dukiba','ଛାତି ଯନ୍ତ୍ରଣା'], breathing:['swasa','ଶ୍ୱାସ ଅସୁବିଧା'] },
+};
+
+const spokenReply = {
+  en:{ intro:'Here is what I found about ', notfound:'Sorry, I did not catch that. Try saying fever, cough, or headache.' },
+  hi:{ intro:'यह रहा जानकारी: ', notfound:'माफ़ कीजिए, समझ नहीं आया। बुखार, खांसी या सिर दर्द कहकर देखें।' },
+  or:{ intro:'ଏହା ହେଉଛି ସୂଚନା: ', notfound:'କ୍ଷମା କରନ୍ତୁ, ବୁଝି ପାରିଲି ନାହିଁ। ଜ୍ୱର, କାଶ କିମ୍ବା ମୁଣ୍ଡ ବିନ୍ଧା କୁହନ୍ତୁ।' },
+};
+
+/* ============================================================
+   EMERGENCY DATA
+============================================================ */
+const hospitals = [
+  { name:'Community Health Centre — Main Road', distance:'1.2 km', phone:'102' },
+  { name:'District Government Hospital', distance:'3.8 km', phone:'108' },
+  { name:'Apollo Clinic (Private)', distance:'5.1 km', phone:'108' },
+];
+
+const firstAid = {
+  cpr:{ title:'CPR', steps:['Check if the person responds and is breathing.','Call for emergency help immediately.',
+    'Push hard and fast in the centre of the chest, about 2 inches deep, 100–120 times per minute.',
+    'Continue until help arrives or the person responds.'] },
+  burns:{ title:'Burns', steps:['Cool the burn under running water for 10–20 minutes.','Remove tight items near the area before it swells.',
+    'Cover loosely with a clean, non-stick cloth.','Do not apply ice, butter, or toothpaste.'] },
+  snakebite:{ title:'Snake Bite', steps:['Keep the person calm and still.','Keep the bitten limb below heart level.',
+    'Do not cut the wound or try to suck out venom.','Get to a hospital immediately.'] },
+  fracture:{ title:'Fracture', steps:['Do not move the injured area unnecessarily.','Support it with a splint or firm padding if possible.',
+    'Apply a cold pack to reduce swelling.','Get medical help right away.'] },
+  heartattack:{ title:'Heart Attack', steps:['Call emergency services immediately.','Have the person sit down and stay calm.',
+    'Loosen tight clothing.','If prescribed, help them take their heart medicine.'] },
+  stroke:{ title:'Stroke', steps:['Check the F.A.S.T. signs: Face drooping, Arm weakness, Speech difficulty, Time to call for help.',
+    'Note the time symptoms started.','Call emergency services immediately.','Keep the person calm and still.'] },
+};
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ============================================================
+   RENDER: profile switchers (shared across tabs)
+============================================================ */
+function renderProfileSwitch(containerId){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  profiles.forEach((p, i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'profile-chip' + (i===currentProfile ? ' active' : '');
+    chip.innerHTML = `<span class="avatar">${p.initials}</span> ${p.name}`;
+    chip.addEventListener('click', ()=>{ currentProfile = i; saveDemoState(); renderAll(); });
+    el.appendChild(chip);
+  });
+}
+
+/* ============================================================
+   RENDER: dashboard
+============================================================ */
+function sparkline(data, color){
+  const w=300,h=80,pad=6;
+  const min=Math.min(...data), max=Math.max(...data);
+  const range = (max-min)||1;
+  const pts = data.map((v,i)=>{
+    const x = pad + (i/(data.length-1))*(w-2*pad);
+    const y = h-pad - ((v-min)/range)*(h-2*pad);
+    return `${x},${y}`;
+  }).join(' ');
+  const dots = data.map((v,i)=>{
+    const x = pad + (i/(data.length-1))*(w-2*pad);
+    const y = h-pad - ((v-min)/range)*(h-2*pad);
+    return `<circle cx="${x}" cy="${y}" r="2.6" fill="${color}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="90"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
+}
+
+function renderDashboard(){
+  const p = profiles[currentProfile];
+  document.getElementById('dHealthScore').textContent = p.vitals.healthScore;
+  document.getElementById('dHeart').innerHTML = p.vitals.heart[p.vitals.heart.length-1] + ' <span class="unit">bpm</span>';
+  document.getElementById('dBP').textContent = p.vitals.bp;
+  document.getElementById('dSpo2').innerHTML = p.vitals.spo2 + ' <span class="unit">%</span>';
+  document.getElementById('dTemp').innerHTML = p.vitals.temp + ' <span class="unit">°F</span>';
+  const avgSleep = (p.vitals.sleep.reduce((a,b)=>a+b,0)/p.vitals.sleep.length).toFixed(1);
+  document.getElementById('dSleep').innerHTML = avgSleep + ' <span class="unit">hrs</span>';
+  document.getElementById('chartHeart').outerHTML = sparkline(p.vitals.heart,'#C24A2E').replace('<svg','<svg id="chartHeart" class="chart"');
+  document.getElementById('chartSleep').outerHTML = sparkline(p.vitals.sleep,'#2F7D57').replace('<svg','<svg id="chartSleep" class="chart"');
+}
+
+document.getElementById('syncBtn').addEventListener('click', ()=>{
+  const p = profiles[currentProfile];
+  // simulate a small realistic nudge in vitals
+  p.vitals.heart.shift(); p.vitals.heart.push(Math.max(60, p.vitals.heart[p.vitals.heart.length-1] + (Math.floor(Math.random()*7)-3)));
+  p.vitals.sleep.shift(); p.vitals.sleep.push(Math.max(3, +( (p.vitals.sleep[p.vitals.sleep.length-1] + (Math.random()*0.8-0.4)).toFixed(1) )));
+  p.vitals.spo2 = Math.min(99, Math.max(92, p.vitals.spo2 + (Math.floor(Math.random()*3)-1)));
+  renderDashboard();
+  document.getElementById('syncTime').textContent = 'Last synced just now';
+  saveDemoState();
+});
+
+/* ============================================================
+   RENDER: medicines
+============================================================ */
+function renderMedicines(){
+  const p = profiles[currentProfile];
+  const list = document.getElementById('medList');
+  list.innerHTML = '';
+  p.medicines.forEach((m, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'med-row';
+    row.innerHTML = `
+      <div><div class="med-name">${m.name} — ${m.dose}</div><div class="med-time">Scheduled: ${m.time}</div></div>
+      <button class="taken-btn ${m.taken?'done':''}" data-idx="${idx}">${m.taken?'✓ Taken':'Mark as taken'}</button>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.taken-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = +btn.dataset.idx;
+      const m = p.medicines[idx];
+      if(!m.taken){
+        m.taken = true;
+        p.adherence.taken = Math.min(p.adherence.total, p.adherence.taken+1);
+        saveDemoState();
+        renderMedicines();
+      }
+    });
+  });
+  const pct = Math.round((p.adherence.taken/p.adherence.total)*100);
+  document.getElementById('adherenceFill').style.width = pct+'%';
+  document.getElementById('adherenceText').textContent = `${p.adherence.taken} of ${p.adherence.total} doses taken this week (${pct}%)`;
+}
+
+/* ============================================================
+   RENDER: profiles page
+============================================================ */
+function renderProfileDetail(){
+  const p = profiles[currentProfile];
+  const el = document.getElementById('profileDetail');
+  el.innerHTML = `
+    <div class="avatar-lg">${p.initials}</div>
+    <div style="flex:1; min-width:220px;">
+      <h2 style="margin-bottom:4px;">${p.name}</h2>
+      <div style="color:var(--muted); font-size:0.88rem; margin-bottom:10px;">Age ${p.age} · Blood group ${p.blood}</div>
+      <div style="margin-bottom:8px;"><strong>Conditions</strong><div class="tag-list">${p.conditions.map(c=>`<span>${c}</span>`).join('')}</div></div>
+      <div style="margin-bottom:8px;"><strong>Allergies</strong><div class="tag-list">${p.allergies.map(c=>`<span>${c}</span>`).join('')}</div></div>
+      <div style="margin-bottom:8px;"><strong>Medicines</strong><div class="tag-list">${p.medicines.map(m=>`<span>${m.name}</span>`).join('')}</div></div>
+      <div><strong>Emergency contact:</strong> ${p.emergencyContact}</div>
+    </div>`;
+}
+
+/* ============================================================
+   RENDER: symptom checker page + quick buttons
+============================================================ */
+function renderSymptomList(containerId, resultContainerId){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  Object.keys(symptoms).forEach(key=>{
+    const b = document.createElement('button');
+    b.textContent = symptoms[key].label;
+    b.addEventListener('click', ()=> showSymptomResult(key, resultContainerId));
+    el.appendChild(b);
+  });
+}
+
+function showSymptomResult(key, containerId){
+  const s = symptoms[key];
+  const d = s[currentLangKey] || s.en;
+  const el = document.getElementById(containerId);
+  el.innerHTML = `
+    <div class="card result-card ${s.emergency?'emergency':''}">
+      <div class="result-title">${d.title}</div>
+      <div class="result-section">
+        <h4>Possible causes</h4>
+        <ul>${d.causes.map(c=>`<li>${c}</li>`).join('')}</ul>
+      </div>
+      <div class="result-section">
+        <h4>What you can do</h4>
+        <ul>${d.care.map(c=>`<li>${c}</li>`).join('')}</ul>
+      </div>
+      <div class="warn-box">${d.warn}</div>
+      <div class="source-tag">Source: ${d.source}</div>
+    </div>`;
+  speak(spokenReply[currentLangKey].intro + d.title, currentLangCode);
+}
+
+/* ============================================================
+   VOICE
+============================================================ */
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+if(SpeechRecognitionAPI){
+  recognition = new SpeechRecognitionAPI();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+}
+
+const voiceHint = document.getElementById('voiceHint');
+const voiceHints = {
+  en:'Try saying fever, cough, or headache.',
+  hi:'बुखार, खांसी या सिर दर्द कहें।',
+  or:'ଜ୍ୱର, କାଶ କିମ୍ବା ମୁଣ୍ଡ ବିନ୍ଧା କୁହନ୍ତୁ।'
+};
+
+document.querySelectorAll('.lang-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.lang-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    currentLangCode = tab.dataset.lang;
+    currentLangKey = tab.dataset.key;
+    document.getElementById('typeInput').placeholder = currentLangKey === 'hi' ? 'या टाइप करें, जैसे बुखार' : currentLangKey === 'or' ? 'କିମ୍ବା ଟାଇପ କରନ୍ତୁ, ଉଦାହରଣସ୍ୱରୂପ ଜ୍ୱର' : 'Or type a symptom, e.g. fever';
+    voiceHint.textContent = voiceHints[currentLangKey] || voiceHints.en;
+  });
+});
+
+const micBtn = document.getElementById('micBtn');
+const micLabel = document.getElementById('micLabel');
+const transcriptEl = document.getElementById('transcript');
+
+function setVoiceStatus(message, isListening=false){
+  micLabel.textContent = message;
+  micBtn.classList.toggle('listening', isListening);
+}
+
+micBtn.addEventListener('click', ()=>{
+  if(!recognition){
+    setVoiceStatus('Voice input is not supported in this browser — try typing below instead.');
+    return;
+  }
+  recognition.lang = currentLangCode;
+  setVoiceStatus('Listening…', true);
+  transcriptEl.textContent = '';
+  try{ recognition.start(); }catch(e){ setVoiceStatus('Tap to speak again when ready.', false); }
+});
+
+if(recognition){
+  recognition.onresult = (event)=>{
+    let text = '';
+    for(let i=event.resultIndex;i<event.results.length;i++){ text += event.results[i][0].transcript; }
+    transcriptEl.textContent = '“' + text + '”';
+    if(event.results[event.results.length-1].isFinal){
+      handleSpokenText(text);
+    }
+  };
+  recognition.onerror = ()=>{
+    setVoiceStatus('Could not hear you — tap to try again.', false);
+  };
+  recognition.onend = ()=>{
+    setVoiceStatus('Tap to speak', false);
+  };
+}
+
+function matchSymptomFromText(text, langKey){
+  const t = text.toLowerCase();
+  const map = keywordMap[langKey] || keywordMap.en;
+  for(const [symptomKey, words] of Object.entries(map)){
+    for(const w of words){ if(t.includes(w.toLowerCase())) return symptomKey; }
+  }
+  return null;
+}
+
+function handleSpokenText(text){
+  const key = matchSymptomFromText(text, currentLangKey);
+  if(key){
+    showSymptomResult(key, 'homeResult');
+  } else {
+    document.getElementById('homeResult').innerHTML =
+      `<div class="card">${spokenReply[currentLangKey].notfound}</div>`;
+    speak(spokenReply[currentLangKey].notfound, currentLangCode);
+  }
+}
+
+function speak(text, langCode){
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = langCode;
+  u.rate = 0.95;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+document.getElementById('typeGoBtn').addEventListener('click', ()=>{
+  const val = document.getElementById('typeInput').value.trim();
+  if(val) handleSpokenText(val);
+});
+document.getElementById('typeInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('typeGoBtn').click();
+});
+
+/* quick-try buttons on home page */
+function renderQuickSymptoms(){
+  const el = document.getElementById('quickSymptoms');
+  el.innerHTML = '';
+  ['fever','cough','headache','stomachpain','chestpain'].forEach(key=>{
+    const b = document.createElement('button');
+    b.textContent = symptoms[key].label;
+    b.addEventListener('click', ()=> showSymptomResult(key, 'homeResult'));
+    el.appendChild(b);
+  });
+}
+
+/* ============================================================
+   EMERGENCY PAGE
+============================================================ */
+function renderEmergency(){
+  const p = profiles[currentProfile];
+  document.getElementById('emContactName').textContent = p.name + "'s emergency contact — " + p.emergencyContact;
+
+  const hEl = document.getElementById('hospitalList');
+  hEl.innerHTML = hospitals.map(h => `
+    <div class="hospital-row">
+      <span>${h.name} <span style="color:var(--muted); font-size:0.8rem;">(${h.distance})</span></span>
+      <button class="call-btn">Call ${h.phone}</button>
+    </div>`).join('');
+
+  const aidEl = document.getElementById('aidGrid');
+  aidEl.innerHTML = '';
+  Object.entries(firstAid).forEach(([key, guide])=>{
+    const b = document.createElement('button');
+    b.className = 'aid-btn';
+    b.textContent = guide.title;
+    b.addEventListener('click', ()=>{
+      const stepsEl = document.getElementById('aidSteps');
+      stepsEl.innerHTML = `<strong>${guide.title} — step by step</strong><ol>${guide.steps.map(s=>`<li>${s}</li>`).join('')}</ol>`;
+      stepsEl.classList.add('show');
+    });
+    aidEl.appendChild(b);
+  });
+
+  const badge = document.getElementById('offlineBadge');
+  if(navigator.onLine){
+    badge.textContent = 'Online — this page also works with Wi-Fi off';
+  } else {
+    badge.textContent = '● Offline right now — and still fully working';
+  }
+}
+window.addEventListener('online', renderEmergency);
+window.addEventListener('offline', renderEmergency);
+
+/* ============================================================
+   INIT
+============================================================ */
+function renderAll(){
+  loadDemoState();
+  renderProfileSwitch('profileSwitchDash');
+  renderProfileSwitch('profileSwitchMed');
+  renderProfileSwitch('profileSwitchProf');
+  renderDashboard();
+  renderMedicines();
+  renderProfileDetail();
+  renderEmergency();
+}
+
+renderQuickSymptoms();
+renderSymptomList('symptomList', 'symptomResult');
+renderAll();
+</script>
+</body>
+</html>

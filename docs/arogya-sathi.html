@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Arogya Sathi — Every Family's Health Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1F1B;
+    --panel:#16302A;
+    --panel-2:#1D3A33;
+    --paper:#F6EFDD;
+    --paper-dim:#EAE0C6;
+    --marigold:#E8A33D;
+    --green:#6FBF8C;
+    --coral:#FF6B4A;
+    --ink-text:#16302A;
+    --muted:#9FBDB2;
+    --line: rgba(246,239,221,0.14);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.55;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{font-family:'Fraunces', serif; font-weight:600; letter-spacing:-0.01em;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.16em;
+    font-size:0.72rem;
+    color:var(--marigold);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--marigold); display:inline-block;}
+  a{color:inherit;}
+  img{max-width:100%;}
+  :focus-visible{outline:2px solid var(--marigold); outline-offset:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  .wrap{max-width:1140px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(14,31,27,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex; align-items:center; justify-content:space-between; height:64px;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:600; font-size:1.05rem;}
+  .brand .dot{width:9px; height:9px; border-radius:50%; background:var(--coral); box-shadow:0 0 0 4px rgba(255,107,74,0.18); animation:beat 1.8s ease-in-out infinite;}
+  @keyframes beat{0%,100%{transform:scale(1);} 25%{transform:scale(1.35);} 40%{transform:scale(1);}}
+  .navlinks{display:flex; gap:26px; font-size:0.85rem; color:var(--muted);}
+  .navlinks a{text-decoration:none; transition:color 0.2s;}
+  .navlinks a:hover{color:var(--paper);}
+  .navlinks{display:none;}
+  @media(min-width:820px){.navlinks{display:flex;}}
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    position:relative;
+    padding:110px 0 70px;
+    overflow:hidden;
+  }
+  header.hero::before{
+    content:'';
+    position:absolute; inset:0;
+    background:
+      radial-gradient(600px 300px at 85% -10%, rgba(111,191,140,0.16), transparent 60%),
+      radial-gradient(500px 260px at 10% 0%, rgba(232,163,61,0.12), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative; z-index:2;}
+  .hero h1{
+    font-size:clamp(2.4rem, 5.4vw, 4.4rem);
+    line-height:1.03;
+    max-width:14ch;
+    margin:22px 0 20px;
+  }
+  .hero h1 em{font-style:italic; color:var(--marigold); font-weight:500;}
+  .hero p.lede{
+    max-width:52ch; color:var(--muted); font-size:1.08rem; margin-bottom:34px;
+  }
+  .hero-cta{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:56px;}
+  .btn{
+    font-family:'IBM Plex Mono', monospace; font-size:0.82rem; letter-spacing:0.02em;
+    padding:13px 22px; border-radius:3px; text-decoration:none; cursor:pointer;
+    border:1px solid transparent; transition:transform 0.15s ease, background 0.2s ease;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary{background:var(--marigold); color:var(--ink);}
+  .btn-primary:hover{transform:translateY(-2px);}
+  .btn-ghost{border-color:var(--line); color:var(--paper); background:transparent;}
+  .btn-ghost:hover{border-color:var(--marigold); color:var(--marigold);}
+
+  /* ECG pulse strip - signature element */
+  .pulse-strip{
+    width:100%; height:70px; position:relative;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    overflow:hidden; background:var(--panel);
+  }
+  .pulse-strip svg{position:absolute; top:0; left:0; height:100%; width:200%;
+    animation:scroll-pulse 9s linear infinite;}
+  @keyframes scroll-pulse{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+  .pulse-path{fill:none; stroke:var(--coral); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .pulse-label{
+    position:absolute; left:28px; top:50%; transform:translateY(-50%);
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--muted);
+    background:var(--panel); padding-right:14px; z-index:2;
+  }
+
+  /* stat row */
+  .stat-row{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line); margin-top:0;
+  }
+  @media(min-width:700px){.stat-row{grid-template-columns:repeat(4,1fr);}}
+  .stat{background:var(--ink); padding:26px 22px;}
+  .stat .num{font-family:'IBM Plex Mono',monospace; font-size:1.7rem; color:var(--green);}
+  .stat .lbl{font-size:0.8rem; color:var(--muted); margin-top:4px;}
+
+  /* ---------- SECTIONS shared ---------- */
+  section{padding:88px 0;}
+  .section-head{max-width:640px; margin-bottom:48px;}
+  .section-head h2{font-size:clamp(1.8rem,3.4vw,2.6rem); margin-top:14px;}
+  .section-head p{color:var(--muted); margin-top:14px; font-size:1rem;}
+  .divider{border:none; border-top:1px solid var(--line);}
+
+  /* problem list */
+  .problem-grid{display:grid; grid-template-columns:1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  @media(min-width:700px){.problem-grid{grid-template-columns:1fr 1fr;}}
+  .problem-item{background:var(--ink); padding:20px 24px; font-size:0.95rem; color:var(--paper-dim); display:flex; gap:14px;}
+  .problem-item .mark{color:var(--coral); font-family:'IBM Plex Mono',monospace;}
+
+  /* personas */
+  .persona-tabs{display:flex; gap:10px; margin-bottom:0; flex-wrap:wrap;}
+  .persona-tab{
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; padding:10px 16px;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted); cursor:pointer; border-radius:3px 3px 0 0;
+    transition:all 0.2s;
+  }
+  .persona-tab.active{background:var(--paper); color:var(--ink-text); border-color:var(--paper);}
+  .persona-card{
+    background:var(--paper); color:var(--ink-text); border-radius:2px;
+    padding:32px; display:none; position:relative;
+    box-shadow:0 24px 50px -20px rgba(0,0,0,0.5);
+  }
+  .persona-card.active{display:block;}
+  .persona-card .pname{font-size:1.5rem; margin-bottom:4px;}
+  .persona-card .page{font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#5a6b62; margin-bottom:18px;}
+  .persona-tags{display:flex; flex-wrap:wrap; gap:8px;}
+  .persona-tags span{
+    background:rgba(22,48,42,0.08); border:1px solid rgba(22,48,42,0.15);
+    padding:6px 12px; font-size:0.8rem; border-radius:20px;
+  }
+
+  /* modules - index card grid */
+  .module-grid{display:grid; grid-template-columns:1fr; gap:14px;}
+  @media(min-width:640px){.module-grid{grid-template-columns:1fr 1fr;}}
+  @media(min-width:980px){.module-grid{grid-template-columns:1fr 1fr 1fr;}}
+  .module-card{
+    background:var(--paper); color:var(--ink-text);
+    border-radius:2px; cursor:pointer;
+    box-shadow:0 10px 24px -14px rgba(0,0,0,0.5);
+    transition:transform 0.18s ease, box-shadow 0.18s ease;
+    overflow:hidden;
+  }
+  .module-card:hover{transform:translateY(-3px); box-shadow:0 16px 30px -14px rgba(0,0,0,0.6);}
+  .module-head{padding:20px 20px 16px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border-bottom:1px dashed rgba(22,48,42,0.2);}
+  .module-num{font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#5a6b62;}
+  .module-head h3{font-size:1.05rem; line-height:1.2;}
+  .module-toggle{font-family:'IBM Plex Mono',monospace; font-size:1rem; color:var(--marigold); flex-shrink:0; transition:transform 0.2s;}
+  .module-card.open .module-toggle{transform:rotate(45deg);}
+  .module-body{max-height:0; overflow:hidden; transition:max-height 0.28s ease;}
+  .module-body-inner{padding:16px 20px 22px; font-size:0.9rem; color:#3a473f;}
+  .module-card.open .module-body{max-height:220px;}
+
+  /* AI engine flow */
+  .flow{display:flex; flex-direction:column; gap:0; max-width:520px;}
+  .flow-step{
+    display:flex; align-items:center; gap:16px; padding:14px 0; position:relative;
+  }
+  .flow-step .node{
+    width:38px; height:38px; border-radius:50%; background:var(--panel-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; color:var(--marigold);
+    flex-shrink:0; z-index:2;
+  }
+  .flow-step:not(:last-child)::after{
+    content:''; position:absolute; left:19px; top:52px; width:1px; height:calc(100% - 20px);
+    background:var(--line);
+  }
+  .flow-step .txt{font-size:0.95rem; color:var(--paper-dim);}
+  .flow-step .txt b{color:var(--paper); display:block; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;}
+
+  .model-pills{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
+  .model-pills span{
+    font-family:'IBM Plex Mono',monospace; font-size:0.76rem; padding:7px 13px; border-radius:20px;
+    border:1px solid var(--line); color:var(--muted);
+  }
+  .model-pills.offline span{border-color:rgba(111,191,140,0.4); color:var(--green);}
+  .model-pills.cloud span{border-color:rgba(232,163,61,0.4); color:var(--marigold);}
+
+  /* two-col */
+  .two-col{display:grid; grid-template-columns:1fr; gap:56px;}
+  @media(min-width:860px){.two-col{grid-template-columns:1fr 1fr;}}
+
+  /* stack */
+  .stack-group{margin-bottom:26px;}
+  .stack-group h4{font-family:'IBM Plex Mono',monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--marigold); margin-bottom:10px;}
+  .stack-tags{display:flex; flex-wrap:wrap; gap:8px;}
+  .stack-tags span{background:var(--panel); border:1px solid var(--line); padding:7px 13px; font-size:0.82rem; border-radius:3px; color:var(--paper-dim);}
+  .stack-tags span.future{opacity:0.55; font-style:italic;}
+
+  /* architecture */
+  .arch{display:flex; flex-direction:column; align-items:center; gap:0; max-width:420px; margin:0 auto;}
+  .arch-node{
+    background:var(--paper); color:var(--ink-text); font-family:'IBM Plex Mono',monospace; font-size:0.82rem;
+    padding:13px 22px; border-radius:3px; text-align:center; width:100%;
+  }
+  .arch-arrow{color:var(--marigold); font-size:1.1rem; padding:4px 0;}
+
+  /* journey */
+  .journey{display:flex; gap:16px; overflow-x:auto; padding-bottom:16px; scrollbar-width:thin;}
+  .journey-step{
+    flex:0 0 200px; background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:20px;
+  }
+  .journey-step .jn{font-family:'IBM Plex Mono',monospace; color:var(--coral); font-size:0.78rem; margin-bottom:10px;}
+  .journey-step .jt{font-size:0.95rem; color:var(--paper);}
+
+  /* safety callout */
+  .callout{
+    background:linear-gradient(135deg, rgba(255,107,74,0.1), rgba(255,107,74,0.03));
+    border:1px solid rgba(255,107,74,0.35); border-radius:4px; padding:32px;
+  }
+  .callout h3{color:var(--coral); font-size:1.2rem; margin-bottom:14px;}
+  .callout ul{list-style:none; display:flex; flex-direction:column; gap:12px;}
+  .callout li{padding-left:24px; position:relative; font-size:0.94rem; color:var(--paper-dim);}
+  .callout li::before{content:'⚑'; position:absolute; left:0; color:var(--coral); font-size:0.8rem;}
+
+  /* roadmap */
+  .phase-tabs{display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap;}
+  .phase-tab{
+    font-family:'IBM Plex Mono',monospace; font-size:0.8rem; padding:10px 18px; border-radius:20px;
+    border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; transition:all 0.2s;
+  }
+  .phase-tab.active{background:var(--marigold); border-color:var(--marigold); color:var(--ink);}
+  .phase-panel{display:none;}
+  .phase-panel.active{display:block; animation:fadein 0.3s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+  .phase-panel ul{list-style:none; display:grid; gap:10px;}
+  @media(min-width:700px){.phase-panel ul{grid-template-columns:1fr 1fr;}}
+  .phase-panel li{
+    background:var(--panel); border:1px solid var(--line); padding:14px 16px; font-size:0.9rem; border-radius:3px; color:var(--paper-dim);
+  }
+
+  /* metrics */
+  .metric-grid{display:grid; grid-template-columns:1fr; gap:1px; background:var(--line); border:1px solid var(--line);}
+  @media(min-width:700px){.metric-grid{grid-template-columns:repeat(3,1fr);}}
+  .metric{background:var(--ink); padding:26px;}
+  .metric .m-top{font-family:'IBM Plex Mono',monospace; color:var(--green); font-size:1.15rem; margin-bottom:8px;}
+  .metric .m-desc{color:var(--muted); font-size:0.86rem;}
+
+  footer{border-top:1px solid var(--line); padding:44px 0; margin-top:20px;}
+  footer .wrap{display:flex; flex-direction:column; gap:6px;}
+  footer .fnote{color:var(--muted); font-size:0.82rem; max-width:60ch;}
+
+  .reveal{opacity:0; transform:translateY(18px); transition:opacity 0.6s ease, transform 0.6s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>AI Arogya Sathi</div>
+    <div class="navlinks">
+      <a href="#problem">Why</a>
+      <a href="#modules">Modules</a>
+      <a href="#ai-engine">AI Engine</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#roadmap">Roadmap</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="eyebrow">Offline-first · Multilingual · Family health</div>
+    <h1>Every family deserves a health companion that works <em>without signal, without judgment</em>.</h1>
+    <p class="lede">AI Arogya Sathi turns symptoms, wearable readings, and government health guidance into plain-language answers — and knows exactly when to say "see a doctor now." It is a decision-support tool, not a diagnosis.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#modules">Explore all 16 modules ↓</a>
+      <a class="btn btn-ghost" href="#ai-engine">See how the AI works</a>
+    </div>
+  </div>
+  <div class="pulse-strip">
+    <span class="pulse-label">LIVE READ — HEALTH SCORE OK</span>
+    <svg viewBox="0 0 800 70" preserveAspectRatio="none">
+      <path class="pulse-path" d="M0,35 L60,35 L80,35 L92,10 L104,60 L116,35 L140,35 L400,35 L420,35 L432,10 L444,60 L456,35 L480,35 L800,35 L860,35 L880,10 L892,60 L904,35 L928,35 L1200,35 L1220,35 L1232,10 L1244,60 L1256,35 L1280,35 L1600,35"/>
+    </svg>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="num">16</div><div class="lbl">Product modules</div></div>
+    <div class="stat"><div class="num">&lt;3s</div><div class="lbl">Target AI response time</div></div>
+    <div class="stat"><div class="num">12+</div><div class="lbl">Wearables &amp; sensors supported</div></div>
+    <div class="stat"><div class="num">3</div><div class="lbl">Languages, growing</div></div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">The problem</div>
+      <h2>Most people don't ignore symptoms because they don't care.</h2>
+      <p>They ignore them because the alternative — a long wait, a confusing search result, a language barrier — feels harder than doing nothing.</p>
+    </div>
+    <div class="problem-grid reveal">
+      <div class="problem-item"><span class="mark">＋</span>Limited access to healthcare, especially outside cities</div>
+      <div class="problem-item"><span class="mark">＋</span>Poor or no internet connectivity for large stretches of the day</div>
+      <div class="problem-item"><span class="mark">＋</span>Low awareness of what a symptom actually means</div>
+      <div class="problem-item"><span class="mark">＋</span>Language barriers with existing digital health tools</div>
+      <div class="problem-item"><span class="mark">＋</span>Long clinic waiting times for routine questions</div>
+      <div class="problem-item"><span class="mark">＋</span>Medical information that's hard to read or trust</div>
+      <div class="problem-item"><span class="mark">＋</span>No easy way to track health continuously at home</div>
+      <div class="problem-item"><span class="mark">＋</span>Unreliable, unsourced advice from random online searches</div>
+    </div>
+  </div>
+</section>
+
+<section id="personas">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Who it's for</div>
+      <h2>Three people, one app, three very different needs.</h2>
+    </div>
+    <div class="reveal">
+      <div class="persona-tabs" role="tablist">
+        <button class="persona-tab active" data-p="0">Rajesh, 48</button>
+        <button class="persona-tab" data-p="1">Priya, 22</button>
+        <button class="persona-tab" data-p="2">Savitri Devi, 67</button>
+      </div>
+      <div class="persona-card active" data-pc="0">
+        <div class="pname">Rajesh</div>
+        <div class="page">Age 48 · Lives in a village · Owns a smartphone</div>
+        <p style="margin-bottom:16px;">Needs quick, trustworthy health advice but can't always travel to see a doctor for routine concerns.</p>
+        <div class="persona-tags"><span>Symptom checker</span><span>Voice assistant</span><span>Offline mode</span><span>Emergency guides</span></div>
+      </div>
+      <div class="persona-card" data-pc="1">
+        <div class="pname">Priya</div>
+        <div class="page">Age 22 · College student · Owns a smartwatch</div>
+        <p style="margin-bottom:16px;">Wants her wearable data to actually mean something, and never wants to miss a dose again.</p>
+        <div class="persona-tags"><span>Wearable integration</span><span>Health dashboard</span><span>Medicine reminders</span></div>
+      </div>
+      <div class="persona-card" data-pc="2">
+        <div class="pname">Savitri Devi</div>
+        <div class="page">Age 67 · Living with high BP and diabetes</div>
+        <p style="margin-bottom:16px;">Needs the app to notice trouble before she does, and to reach help fast if something goes wrong.</p>
+        <div class="persona-tags"><span>AI risk detection</span><span>Emergency mode</span><span>Family profiles</span><span>QR medical card</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="modules">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">The full picture — 16 modules</div>
+      <h2>Every card below is a working piece of the product. Tap one open.</h2>
+      <p>From the first "I have fever" to a scannable emergency medical card — this is everything Arogya Sathi does, laid out like a patient's own file.</p>
+    </div>
+    <div class="module-grid reveal" id="moduleGrid"></div>
+  </div>
+</section>
+
+<section id="ai-engine">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Under the hood</div>
+      <h2>Answers are retrieved, not invented.</h2>
+      <p>Every response is grounded in real documents before the model ever writes a word — and the sources are always shown.</p>
+    </div>
+    <div class="two-col">
+      <div class="reveal">
+        <div class="flow">
+          <div class="flow-step"><div class="node">Q</div><div class="txt"><b>Question comes in</b>Asked in plain language, by voice or text</div></div>
+          <div class="flow-step"><div class="node">→</div><div class="txt"><b>Retrieval</b>AI searches government PDFs, WHO material, medical guidelines, hospital &amp; first-aid documents</div></div>
+          <div class="flow-step"><div class="node">⧉</div><div class="txt"><b>Relevant sections found</b>Only the passages that actually answer the question are pulled</div></div>
+          <div class="flow-step"><div class="node">✎</div><div class="txt"><b>LLM generates the response</b>Written in the person's own language, grounded in what was retrieved</div></div>
+          <div class="flow-step"><div class="node">✓</div><div class="txt"><b>Sources shown</b>Every answer links back to where it came from</div></div>
+        </div>
+      </div>
+      <div class="reveal">
+        <h3 style="font-size:1.1rem; margin-bottom:14px;">AI models</h3>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:8px;">Offline, on-device — for when there's no signal:</p>
+        <div class="model-pills offline"><span>Gemma</span><span>Llama</span><span>Phi</span><span>TinyLlama</span></div>
+        <p style="color:var(--muted); font-size:0.9rem; margin:20px 0 8px;">Cloud-connected — for deeper reasoning when online:</p>
+        <div class="model-pills cloud"><span>GPT</span><span>Claude</span><span>Gemini</span></div>
+        <hr class="divider" style="margin:28px 0;">
+        <h3 style="font-size:1.1rem; margin-bottom:14px;">Technology stack</h3>
+        <div class="stack-group">
+          <h4>Frontend</h4>
+          <div class="stack-tags"><span>HTML</span><span>CSS</span><span>JavaScript</span><span class="future">React (future)</span></div>
+        </div>
+        <div class="stack-group">
+          <h4>Backend</h4>
+          <div class="stack-tags"><span>FastAPI</span><span>Python</span></div>
+        </div>
+        <div class="stack-group">
+          <h4>AI layer</h4>
+          <div class="stack-tags"><span>LangChain</span><span>LangGraph</span><span>ChromaDB</span><span>Sentence Transformers</span><span>Ollama</span></div>
+        </div>
+        <div class="stack-group">
+          <h4>Database</h4>
+          <div class="stack-tags"><span>SQLite</span><span>PostgreSQL</span><span class="future">Redis (future)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">System architecture</div>
+      <h2>How a question turns into an answer on the dashboard.</h2>
+    </div>
+    <div class="reveal arch">
+      <div class="arch-node">User</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">Web App</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">FastAPI</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">Wearable APIs</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">AI Engine</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">RAG</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">Vector Database</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">LLM</div><div class="arch-arrow">↓</div>
+      <div class="arch-node">Response</div><div class="arch-arrow">↓</div>
+      <div class="arch-node" style="background:var(--marigold);">Dashboard</div>
+    </div>
+  </div>
+</section>
+
+<section id="journey">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">The user journey</div>
+      <h2>One session, start to finish.</h2>
+      <p>Scroll sideways — this is the real sequence a family member moves through, in order.</p>
+    </div>
+    <div class="journey reveal">
+      <div class="journey-step"><div class="jn">01</div><div class="jt">Open the app</div></div>
+      <div class="journey-step"><div class="jn">02</div><div class="jt">Select family member</div></div>
+      <div class="journey-step"><div class="jn">03</div><div class="jt">Dashboard opens</div></div>
+      <div class="journey-step"><div class="jn">04</div><div class="jt">Wearable syncs</div></div>
+      <div class="journey-step"><div class="jn">05</div><div class="jt">Health score is generated</div></div>
+      <div class="journey-step"><div class="jn">06</div><div class="jt">Ask the AI a question</div></div>
+      <div class="journey-step"><div class="jn">07</div><div class="jt">AI searches the knowledge base</div></div>
+      <div class="journey-step"><div class="jn">08</div><div class="jt">Response is generated</div></div>
+      <div class="journey-step"><div class="jn">09</div><div class="jt">Risk analysis runs</div></div>
+      <div class="journey-step"><div class="jn">10</div><div class="jt">Recommendations saved to history</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Safety &amp; compliance</div>
+      <h2>Trust is the actual product.</h2>
+    </div>
+    <div class="callout reveal">
+      <h3>What Arogya Sathi will always do</h3>
+      <ul>
+        <li>State clearly that it does not diagnose disease — it supports a decision, doctors make it</li>
+        <li>Recommend a qualified healthcare professional whenever a symptom warrants one</li>
+        <li>Flag emergency symptoms — chest pain, severe breathing difficulty, stroke signs — and push toward immediate care</li>
+        <li>Ask for consent before syncing any wearable device, and store health data securely</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Where this is headed</div>
+      <h2>Three phases, from prototype to platform.</h2>
+    </div>
+    <div class="reveal">
+      <div class="phase-tabs">
+        <button class="phase-tab active" data-phase="0">Phase 1</button>
+        <button class="phase-tab" data-phase="1">Phase 2</button>
+        <button class="phase-tab" data-phase="2">Phase 3</button>
+      </div>
+      <div class="phase-panel active" data-pp="0">
+        <ul>
+          <li>AI chatbot with grounded, sourced answers</li>
+          <li>Retrieval-Augmented Generation (RAG) pipeline</li>
+          <li>Symptom checker across 10 common symptoms</li>
+          <li>Health dashboard with simulated wearable data</li>
+        </ul>
+      </div>
+      <div class="phase-panel" data-pp="1">
+        <ul>
+          <li>Real wearable integration — Health Connect, Apple Health, Bluetooth devices</li>
+          <li>Medicine reminders with adherence history</li>
+          <li>Family profiles for every household member</li>
+        </ul>
+      </div>
+      <div class="phase-panel" data-pp="2">
+        <ul>
+          <li>Telemedicine integration</li>
+          <li>Full nutrition analysis</li>
+          <li>Multilingual voice assistant across regional languages</li>
+          <li>Government health scheme integration</li>
+          <li>Predictive analytics</li>
+          <li>Direct hospital connectivity</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="metrics">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">How success gets measured</div>
+      <h2>Numbers this prototype is built to hit.</h2>
+    </div>
+    <div class="metric-grid reveal">
+      <div class="metric"><div class="m-top">&lt; 3 seconds</div><div class="m-desc">AI response time in the local demo</div></div>
+      <div class="metric"><div class="m-top">Near real-time</div><div class="m-desc">Dashboard updates as vitals come in</div></div>
+      <div class="metric"><div class="m-top">Mobile-first</div><div class="m-desc">Responsive across every screen size</div></div>
+      <div class="metric"><div class="m-top">Offline core</div><div class="m-desc">Emergency guidance works without signal</div></div>
+      <div class="metric"><div class="m-top">Always cited</div><div class="m-desc">Every RAG-based answer shows its source</div></div>
+      <div class="metric"><div class="m-top">Demo-tested</div><div class="m-desc">Positive feedback across live demonstrations</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>AI Arogya Sathi</div>
+    <p class="fnote">A decision-support tool, not a replacement for a doctor. Built for a school innovation exhibition / hackathon prototype. Version 1.0 PRD.</p>
+  </div>
+</footer>
+
+<script>
+  const modules = [
+    ["AI Health Assistant","Ask naturally — 'I have fever' or 'My BP is 160' — and get a plain explanation of possible causes, basic home care, whether to see a doctor, and emergency warnings when needed."],
+    ["Wearable Integration","Connects to Apple Watch, Google Fit, Health Connect, Fitbit, Garmin, Samsung Watch, and Bluetooth devices like pulse oximeters, BP monitors, and thermometers — with future ESP32 sensor support."],
+    ["AI Health Dashboard","One screen for health score, heart rate, blood pressure, SpO₂, temperature, sleep, calories, stress, and weight — with real-time graphs and weekly/monthly reports."],
+    ["AI Risk Detection","Continuously watches heart rate, sleep, stress, temperature, SpO₂, and blood pressure together — for example rising heart rate plus falling sleep plus rising stress signals possible fatigue, with a recommendation to rest, hydrate, or see a doctor."],
+    ["Symptom Checker","Covers fever, cold, cough, headache, vomiting, diarrhea, body pain, chest pain, breathing difficulty, and stomach pain — surfacing possible causes, severity, self-care, and when to escalate."],
+    ["Medicine Reminder","Keeps a medicine list with schedules, notifications, missed-dose alerts, and a daily adherence history."],
+    ["Family Profiles","One profile per family member — age, weight, blood group, medical conditions, medicines, allergies, and emergency contact, all in one place."],
+    ["Emergency Mode","Works fully offline: emergency contacts, nearby hospitals, and step-by-step guides for CPR, snake bite, burns, fractures, heart attack, stroke, and poisoning."],
+    ["Voice Assistant","Speaks and listens in Hindi, English, and regional languages, with speech-to-text and text-to-speech built in."],
+    ["Nutrition Assistant","Recognizes food, estimates calories, protein, carbs, and fat, and suggests meals based on what's needed."],
+    ["QR Medical Card","One scan surfaces blood group, allergies, medical conditions, medicines, emergency contact, and an optional ABHA number."],
+    ["Health History","Long-term graphs for heart rate, BP, weight, sleep, stress, and temperature, rolled up into monthly reports."],
+    ["Daily Health Tips","Morning nudges on exercise, hydration, and food; night nudges on sleep, stress reduction, and meditation."],
+    ["Women's Health","Period tracker, pregnancy support, nutrition guidance, and tailored health tips."],
+    ["Child Health","Growth tracking, vaccination schedule, weight, and height in one view."],
+    ["Mental Wellness","Mood tracker, stress score, breathing exercises, meditation, and sleep recommendations."]
+  ];
+
+  const grid = document.getElementById('moduleGrid');
+  modules.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'module-card';
+    card.innerHTML = `
+      <div class="module-head">
+        <div>
+          <div class="module-num">MODULE ${String(i+1).padStart(2,'0')}</div>
+          <h3>${m[0]}</h3>
+        </div>
+        <div class="module-toggle">+</div>
+      </div>
+      <div class="module-body"><div class="module-body-inner">${m[1]}</div></div>
+    `;
+    card.addEventListener('click', () => {
+      const body = card.querySelector('.module-body');
+      const isOpen = card.classList.contains('open');
+      document.querySelectorAll('.module-card.open').forEach(c => {
+        if(c !== card){ c.classList.remove('open'); c.querySelector('.module-body').style.maxHeight = null; }
+      });
+      card.classList.toggle('open', !isOpen);
+      body.style.maxHeight = !isOpen ? body.scrollHeight + 'px' : null;
+    });
+    grid.appendChild(card);
+  });
+
+  // persona tabs
+  document.querySelectorAll('.persona-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.persona-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`.persona-card[data-pc="${tab.dataset.p}"]`).classList.add('active');
+    });
+  });
+
+  // phase tabs
+  document.querySelectorAll('.phase-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.phase-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`.phase-panel[data-pp="${tab.dataset.phase}"]`).classList.add('active');
+    });
+  });
+
+  // scroll reveal
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); } });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>
